@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Telephony;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.LoaderManager;
@@ -15,7 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivityTAG_";
 
@@ -36,10 +37,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_SMS}, SMS_CALL_LOG);
             }
         }else {
-            getSupportLoaderManager().initLoader(LIST_ID, null, this);
+            //getSupportLoaderManager().initLoader(LIST_ID, null, this);
+            doMagic();
         }
     }
 
+    /*
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
@@ -51,18 +54,19 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     null);
 
     }
-
+*/
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if(requestCode == SMS_CALL_LOG){
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                getSupportLoaderManager().initLoader(LIST_ID, null, this);
+                //getSupportLoaderManager().initLoader(LIST_ID, null, this);
+                doMagic();
             }else{
                 Toast.makeText(this, "no use for this app", Toast.LENGTH_LONG).show();
             }
         }
     }
-
+/*
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         if (cursor != null && cursor.getCount() > 0) {
@@ -78,5 +82,33 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         Log.d(TAG, "onLoaderReset: ");
+    }
+    */
+
+    private void doMagic(){
+        Uri uri = Uri.parse(SMS_CONTENT_URI);
+        Cursor mCursor = null;
+        // Queries the user dictionary and returns results
+        try{
+            mCursor = getContentResolver().query(
+                    uri,                                // The content URI of the words table
+                    null,                        // The columns to return for each row
+                    null,                    // Selection criteria
+                    null,                     // Selection criteria
+                    null);                        // The sort order for the returned rows
+            if(mCursor != null){
+                if(mCursor.moveToFirst()){
+                    do{
+                        Log.d(TAG, "doMagic: " + mCursor.getString(mCursor.getColumnIndex(Telephony.Sms.CREATOR)));
+                        Log.d(TAG, "doMagic: " + mCursor.getString(mCursor.getColumnIndex(Telephony.Sms.BODY)));
+                    }while(mCursor.moveToNext());
+                }
+            }
+        }finally {
+            if(mCursor != null){
+                mCursor.close();
+            }
+        }
+
     }
 }
